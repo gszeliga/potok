@@ -9,22 +9,35 @@ import scala.util.parsing.combinator._
 trait BencodeType
 
 case class BString(get: String) extends BencodeType
-case class BInt extends BencodeType
-case class BList extends BencodeType
-case class BDict extends BencodeType
+case class BInt(get: Int) extends BencodeType
+case class BList(get: List[BencodeType]) extends BencodeType
+case class BDict(get: Map[BString, BencodeType]) extends BencodeType
 
-class Parser extends RegexParsers{
+class Parser extends RegexParsers {
 
   def colon: Parser[Char] = elem(':') named ("colon")
-  def digits: Parser[Int] = """\d+""".r ^^ (_.toInt) named ("digits")
-  def literal: Parser[String] = """[\w\:\/\.]""".r named ("literal")
+  def natural: Parser[Int] = """\d+""".r ^^ (_.toInt) named ("natural")
+  def signedInt: Parser[Int] = """(-){0,1}\d+""".r ^^ (_.toInt) named ("signed_int")
+  def literal: Parser[String] = """[\w\W\:\/\.]""".r named ("literal")
 
   def string: Parser[BString] =
-    digits ~ colon >> {
-      s => repN(s._1, literal) ^^ (l => BString(l.mkString))
+    natural ~ colon >> {
+      case size ~ c => repN(size, literal) ^^ (l => BString(l.mkString))
     } named ("string")
 
-  def root = string
+  def int: Parser[BInt] = {
+    elem('i') ~> signedInt <~ elem('e') ^^ (BInt(_)) named ("int")
+  }
+
+  def list: Parser[BList] = {
+    elem('l') ~> rep(string | int | list | dict) <~ elem('e') ^^ (BList(_)) named ("list")
+  }
+
+  def dict: Parser[BDict] = {
+    elem('d') ~> rep(string ~ (string | int | list | dict)) <~ elem('e') ^^ (_.map { case a ~ b => a -> b }) ^^ (l => BDict(l.toMap)) named ("dict")
+  }
+
+  def root = string | int | list | dict
 
 }
 

@@ -1,0 +1,39 @@
+d
+ 8:announce
+ 36:udp://tracker.openbittorrent.com:80/
+ 13:announce-list
+ l
+  l
+   35:udp://tracker.openbittorrent.com:80
+  e
+  l
+    29:udp://tracker.publicbt.com:80
+  e
+  l
+   26:udp://tracker.istole.it:80
+  e
+  l
+   25:udp://open.demonii.com:80
+  e
+  l
+   32:udp://tracker.coppersurfer.tk:80
+  e
+  l
+   23:udp://tracker.ccc.de:80
+  e
+ e
+ 7:comment
+ 56:Visit #EZTV on EFNet (irc.efnet.info) or http://eztv.it/
+ 13:creation date
+ i1381716156e
+ 4:info
+ d
+  6:length
+  i568868608e
+  4:name
+  42:The.Walking.Dead.S04E01.HDTV.x264-ASAP.mp4
+  12:piece length
+  i524288e
+  6:pieces
+ e
+e

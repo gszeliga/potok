@@ -12,7 +12,7 @@ object test {
 
   val fis = StreamReader(new InputStreamReader(new FileInputStream(getClass().getResource("/samples/torrent/The.Walking.Dead.S04E01.HDTV.x264-ASAP.eztv.torrent").getFile())))
                                                   //> fis  : scala.util.parsing.input.StreamReader = scala.util.parsing.input.Stre
-                                                  //| amReader@5289cf1e
+                                                  //| amReader@3ebd106
 
   fis.first                                       //> res0: Char = d
   fis.drop(1).first                               //> res1: Char = 8
@@ -23,12 +23,19 @@ object test {
     (a._1.drop(1), str)
 
   }                                               //> res2: (scala.util.parsing.input.StreamReader, String) = (scala.util.parsing.
-                                                  //| input.StreamReader@3f77b3cd,d8:announce36:udp://tracker.openbittorrent.com:8
+                                                  //| input.StreamReader@180cf393,d8:announce36:udp://tracker.openbittorrent.com:8
                                                   //| 0/13:announce-listll35:udp://tracker.openbittorrent.com:80el29:udp://tracker
                                                   //| .publicbt.com:80el26:udp://tracker.istole.it:80el25:udp://open.demonii.com:8
                                                   //| 0el32:udp://tracker.coppersurfer.tk:80el23:udp://tracker.ccc.de:80ee7:commen
                                                   //| t56:Visit #EZTV on EFNet (irc.efnet.info) or http://eztv.it/13:crea)
 
  List(" ", " ").mkString                          //> res3: String = "  "
-
+	
+	'ç'.toHexString                           //> res4: String = e7
+ "%02X".format('ç'.toByte)                        //> res5: String = E7
+	0xe7                                      //> res6: Int(231) = 231
+	
+	
+	"ç".getBytes("US-ASCII")                  //> res7: Array[Byte] = Array(63)
+	"ç".getBytes("UTF-8")                     //> res8: Array[Byte] = Array(-61, -89)
 }

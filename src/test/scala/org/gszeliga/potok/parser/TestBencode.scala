@@ -103,10 +103,10 @@ class TestBencode extends FlatSpec with Matchers {
   }
   
   it must "parse a whole file" in {
-    val result = Bencode.parse(getClass().getResource("/samples/torrent/The.Walking.Dead.S04E01.HDTV.x264-ASAP.eztv.torrent"))
+   //val result = Bencode.parse(getClass().getResource("/samples/torrent/The.Walking.Dead.S04E01.HDTV.x264-ASAP.eztv.torrent"))
+    val result = Bencode.parse(getClass().getResource("/samples/torrent/enciclopedia-de-la-astronomia-y-el28.torrent"))
 
-    result should be(Left)
+   result should be(Left)
 
   }
-
 }

@@ -31,7 +31,7 @@ class Parser extends RegexParsers {
 
   //http://sanjaal.com/java/tag/java-regular-expression-posix-character-classes-us-ascii-only/
   //www.regexplanet.com/advanced/java/index.html
-  def literal: Parser[String] = """[\p{Print}]""".r named ("printable characters")
+  def literal: Parser[String] = """[\p{L}\p{M}\p{N}\p{Z}\p{S}\p{S}\p{P}]""".r named ("printable characters")
 
   def byteString = new Parser[String] {
     def apply(in: Input) = {
@@ -85,5 +85,5 @@ object Bencode extends Parser {
     case NoSuccess(msg, next) => Right(new ParseError(msg, next))
   }
 
-  def parse(in: URL): Either[BencodeType, ParseError] = parse(StreamReader(new InputStreamReader(new FileInputStream(in.getFile()), "US-ASCII")))
+  def parse(in: URL): Either[BencodeType, ParseError] = parse(StreamReader(new InputStreamReader(new FileInputStream(in.getFile()), "ISO-8859-15")))
 }

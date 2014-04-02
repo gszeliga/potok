@@ -5,19 +5,24 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import scala.util.parsing.input.CharArrayReader
+import java.io.BufferedInputStream
+import java.io.FileInputStream
+import scala.io.Source
+import scala.util.parsing.input.StreamReader
+import java.io.InputStreamReader
 
 @RunWith(classOf[JUnitRunner])
 class TestBencode extends FlatSpec with Matchers {
 
   behavior of "Bencode parser"
-  
+
   it must "parse a space" in {
     val str = new CharArrayReader("2:  ".toCharArray())
     val result = Bencode.parse(str)
 
     result should be(Left(BString("  ")))
-  }  
-  
+  }
+
   it must "parse an url" in {
     val str = new CharArrayReader("36:udp://tracker.openbittorrent.com:80/".toCharArray())
     val result = Bencode.parse(str)
@@ -25,13 +30,13 @@ class TestBencode extends FlatSpec with Matchers {
     result should be(Left(BString("udp://tracker.openbittorrent.com:80/")))
   }
 
-  it must "parse a comment" in { 
+  it must "parse a comment" in {
     val str = new CharArrayReader("56:Visit #EZTV on EFNet (irc.efnet.info) or http://eztv.it/".toCharArray())
     val result = Bencode.parse(str)
 
     result should be(Left(BString("Visit #EZTV on EFNet (irc.efnet.info) or http://eztv.it/")))
-  }  
-  
+  }
+
   it must "parse a positive integer" in {
     val int = new CharArrayReader("i350e".toCharArray())
     val result = Bencode.parse(int)
@@ -99,14 +104,44 @@ class TestBencode extends FlatSpec with Matchers {
     val list = new CharArrayReader("ll35:udp://tracker.openbittorrent.com:80el29:udp://tracker.publicbt.com:80el26:udp://tracker.istole.it:80el25:udp://open.demonii.com:80el32:udp://tracker.coppersurfer.tk:80el23:udp://tracker.ccc.de:80ee".toCharArray())
     val result = Bencode.parse(list)
 
-    result should be(Left(BList(List(BList(List(BString("udp://tracker.openbittorrent.com:80"))), BList(List(BString("udp://tracker.publicbt.com:80"))),BList(List(BString("udp://tracker.istole.it:80"))),BList(List(BString("udp://open.demonii.com:80"))),BList(List(BString("udp://tracker.coppersurfer.tk:80"))), BList(List(BString("udp://tracker.ccc.de:80")))))))
+    result should be(Left(BList(List(BList(List(BString("udp://tracker.openbittorrent.com:80"))), BList(List(BString("udp://tracker.publicbt.com:80"))), BList(List(BString("udp://tracker.istole.it:80"))), BList(List(BString("udp://open.demonii.com:80"))), BList(List(BString("udp://tracker.coppersurfer.tk:80"))), BList(List(BString("udp://tracker.ccc.de:80")))))))
   }
-  
-  it must "parse a whole file" in {
-   //val result = Bencode.parse(getClass().getResource("/samples/torrent/The.Walking.Dead.S04E01.HDTV.x264-ASAP.eztv.torrent"))
+
+  it must "use the right encoding" in {
+    
+    val file = getClass().getResource("/samples/torrent/The.Walking.Dead.S04E01.HDTV.x264-ASAP.eztv.torrent").getFile()
+    
+    //479
+    val bis = new BufferedInputStream(new FileInputStream(file))
+    val rawBytes = Stream.continually(bis.read).drop(478).takeWhile(-1 !=).map(_.toHexString)
+ 
+    val stream = StreamReader(new InputStreamReader(new FileInputStream(file), "ISO-8859-15"))
+    
+    def read(s: StreamReader, r: String): String = {
+      if(s.atEnd) r
+      else {
+        read(s.rest, r + "|" + s.first.toHexString)
+      }
+    }
+    
+    val fromRawBytes = rawBytes.foldLeft("")(_ + "|" + _)
+    val fromEncodedBytes = read(stream.drop(478), "")
+    
+    //println(fromRawBytes.foldLeft("")(_ + "|" + _).length / 2) //21722
+    //println(fromEncodedBytes.length / 2)
+
+    println(fromRawBytes.split("|").size)
+    println(fromEncodedBytes.split("|").size)
+    
+    //fromRawBytes should be(fromEncodedBytes) 
+    
+  }
+
+  ignore must "parse a whole file" in {
+    //val result = Bencode.parse(getClass().getResource("/samples/torrent/The.Walking.Dead.S04E01.HDTV.x264-ASAP.eztv.torrent"))
     val result = Bencode.parse(getClass().getResource("/samples/torrent/enciclopedia-de-la-astronomia-y-el28.torrent"))
 
-   result should be(Left)
+    result should be(Left)
 
   }
 }

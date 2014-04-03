@@ -12,7 +12,7 @@ case class ByteOffsetPosition(offset: Int) extends Position {
   def lineContents: String = ""
 } 
 
-class ByteReader (val bytes: Array[Byte], override val offset: Int) extends Reader[Byte] {
+class ByteReader (val bytes: Array[Byte], override val offset: Int = 0) extends Reader[Byte] {
   def this(reader: Reader[_]) = this(reader.source.toString.getBytes, 0)
   def this(bytes: Seq[Byte]) = this(bytes.toArray, 0)
   def this(str: String) = this(str.getBytes, 0)

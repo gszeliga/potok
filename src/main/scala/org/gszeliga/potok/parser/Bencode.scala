@@ -12,12 +12,12 @@ import java.io.InputStreamReader
 import scala.util.parsing.input.StreamReader
 import java.io.FileInputStream
 
-trait BencodeType
+trait bBencodeType
 
-case class BString(get: String) extends BencodeType
-case class BInt(get: Int) extends BencodeType
-case class BList(get: List[BencodeType]) extends BencodeType
-case class BDict(get: Map[BString, BencodeType]) extends BencodeType
+case class bBString(get: String) extends bBencodeType
+case class bBInt(get: Int) extends bBencodeType
+case class bBList(get: List[bBencodeType]) extends bBencodeType
+case class bBDict(get: Map[bBString, bBencodeType]) extends bBencodeType
 
 class Parser extends RegexParsers {
 
@@ -42,32 +42,32 @@ class Parser extends RegexParsers {
 
   def delimitedBy[A](left: Parser[Char], right: Parser[Char])(p: Parser[A]): Parser[A] = left ~> p <~ right
 
-  def string: Parser[BString] =
+  def string: Parser[bBString] =
     natural ~ ':' >> {
-      case size ~ _ => repN(size, literal) ^^ (l => BString(l.mkString))
+      case size ~ _ => repN(size, literal) ^^ (l => bBString(l.mkString))
     } named ("string")
 
-  def bstring: Parser[BString] =
+  def bstring: Parser[bBString] =
     natural ~ ':' >> {
-      case size ~ _ => repN(size, byteString) ^^ (l => BString(l.mkString))
+      case size ~ _ => repN(size, byteString) ^^ (l => bBString(l.mkString))
     } named ("bstring")    
     
-  def int: Parser[BInt] = {
-    delimitedBy('i', 'e')(signedInt) ^^ (BInt(_)) named ("int")
+  def int: Parser[bBInt] = {
+    delimitedBy('i', 'e')(signedInt) ^^ (bBInt(_)) named ("int")
   }
 
   def strings = string | bstring
     
-  def list: Parser[BList] = {
+  def list: Parser[bBList] = {
     delimitedBy('l', 'e') {
       rep(strings | int | list | dict)
-    } ^^ (BList(_)) named ("list")
+    } ^^ (bBList(_)) named ("list")
   }
 
-  def dict: Parser[BDict] = {
+  def dict: Parser[bBDict] = {
     delimitedBy('d', 'e') {
       rep(string ~ (strings | int | list | dict))
-    } ^^ (_.map { case key ~ value => key -> value }) ^^ (l => BDict(l.toMap)) named ("dict")
+    } ^^ (_.map { case key ~ value => key -> value }) ^^ (l => bBDict(l.toMap)) named ("dict")
   }
 
   def root = strings | int | list | dict
@@ -80,10 +80,10 @@ object Bencode extends Parser {
     override def toString = s"'$msg' at ${next.pos}"
   }
 
-  def parse(in: Reader[Char]): Either[BencodeType, ParseError] = phrase(root)(in) match {
+  def parse(in: Reader[Char]): Either[bBencodeType, ParseError] = phrase(root)(in) match {
     case Success(r, _) => Left(r)
     case NoSuccess(msg, next) => Right(new ParseError(msg, next))
   }
 
-  def parse(in: URL): Either[BencodeType, ParseError] = parse(StreamReader(new InputStreamReader(new FileInputStream(in.getFile()), "ISO-8859-15")))
+  def parse(in: URL): Either[bBencodeType, ParseError] = parse(StreamReader(new InputStreamReader(new FileInputStream(in.getFile()), "ISO-8859-15")))
 }

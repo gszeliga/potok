@@ -1,4 +1,4 @@
-package org.gszeliga.potok.parser
+package org.gszeliga.potok.torrent.parser
 
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.Reader
@@ -6,27 +6,43 @@ import java.io.BufferedInputStream
 import java.io.FileInputStream
 import java.net.URL
 
-trait BencodeType
+import org.gszeliga.potok.torrent.parser.ByteReader;
+
+sealed trait BencodeType
+
+object BEmpty extends BencodeType
 
 case class BString(get: List[Byte]) extends BencodeType {
 
   def create(enc: String) = new String(get.toArray, enc)
-  
+
   override def toString = {
     //We use a 1-byte encoding since it's compliant with specification
-    val output = new String(get.take(200).toArray,"ISO-8859-15")
-    if(get.length > 200) output + " ..." else output
+    val output = new String(get.take(200).toArray, "ISO-8859-15")
+    if (get.length > 200) output + " ..." else output
   }
 }
 
 case class BInt(get: Int) extends BencodeType {
-	override def toString = get.toString
+  override def toString = get.toString
 }
 
-case class BList(get: List[BencodeType]) extends BencodeType
+case class BList(get: List[BencodeType]) extends BencodeType {
+  def flatten = {
+    def doFlat(l: List[BencodeType]): List[BencodeType] = {
+      l match {
+        case BList(l) :: tail => doFlat(l) ++ doFlat(tail)
+        case head :: tail => head :: doFlat(tail)
+        case _ => Nil
+      }
+    }
+    doFlat(get)
+  }
+}
+
 case class BDict(get: Map[BString, BencodeType]) extends BencodeType
 
-trait BencodeInBytes extends Parsers {
+trait BencodeParser extends Parsers {
 
   type Elem = Byte
 
@@ -41,6 +57,7 @@ trait BencodeInBytes extends Parsers {
     def apply(in: Input) = {
       if (in.atEnd) Failure("End of input reached", in)
       else {
+        //Specification says numbers are coded in ASCII
         val n = new String(Array(in.first.asInstanceOf[Byte]), "US-ASCII")
         re.findFirstIn(n) map (Success(_, in.rest)) getOrElse (Failure(s"'$n' is not a number", in))
       }
@@ -65,6 +82,7 @@ trait BencodeInBytes extends Parsers {
     }
   } named ("raw_bytes")
 
+  //After different tests performed, I arrived to the conclusion that size = bytes
   def string: Parser[BString] =
     natural ~ ':' >> {
       case size ~ _ => repN(size, rawbyte) ^^ (BString(_))
@@ -90,7 +108,7 @@ trait BencodeInBytes extends Parsers {
 
 }
 
-object BencodeInBytes extends BencodeInBytes {
+object Bencode extends BencodeParser {
 
   class ParseError(val msg: String, val next: Input) {
     override def toString = s"'$msg' at ${next.pos}"

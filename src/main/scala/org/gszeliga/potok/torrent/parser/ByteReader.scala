@@ -1,4 +1,6 @@
-package org.gszeliga.potok.parser
+package org.gszeliga.potok.torrent.parser
+
+import org.gszeliga.potok.torrent.parser.ByteReader;
 
 import scala.util.parsing.input.Reader
 import scala.util.parsing.input.CharArrayReader.EofCh
@@ -16,9 +18,7 @@ class ByteReader (val bytes: Array[Byte], override val offset: Int = 0) extends 
   def this(reader: Reader[_]) = this(reader.source.toString.getBytes, 0)
   def this(bytes: Seq[Byte]) = this(bytes.toArray, 0)
   def this(str: String) = this(str.getBytes, 0)
-
-  override def source = new String(bytes, "UTF-8")
- 
+  																							
   def first: Byte = if (offset < bytes.length) bytes(offset) else EofCh.toByte
   def rest: ByteReader = if (offset < bytes.length) new ByteReader(bytes, offset + 1) else this
   def pos: Position = ByteOffsetPosition(offset)

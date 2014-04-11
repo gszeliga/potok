@@ -6,11 +6,7 @@ import java.io.BufferedInputStream
 import java.io.FileInputStream
 import java.net.URL
 
-import org.gszeliga.potok.torrent.parser.ByteReader;
-
 sealed trait BencodeType
-
-object BEmpty extends BencodeType
 
 case class BString(get: List[Byte]) extends BencodeType {
 
@@ -27,18 +23,7 @@ case class BInt(get: Int) extends BencodeType {
   override def toString = get.toString
 }
 
-case class BList(get: List[BencodeType]) extends BencodeType {
-  def flatten = {
-    def doFlat(l: List[BencodeType]): List[BencodeType] = {
-      l match {
-        case BList(l) :: tail => doFlat(l) ++ doFlat(tail)
-        case head :: tail => head :: doFlat(tail)
-        case _ => Nil
-      }
-    }
-    doFlat(get)
-  }
-}
+case class BList(get: List[BencodeType]) extends BencodeType
 
 case class BDict(get: Map[BString, BencodeType]) extends BencodeType
 

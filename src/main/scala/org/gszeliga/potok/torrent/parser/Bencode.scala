@@ -6,15 +6,32 @@ import java.io.BufferedInputStream
 import java.io.FileInputStream
 import java.net.URL
 
-sealed trait BencodeType
+trait BencodeConstants {
+  final val DEFAULT_STRING_ENCODING = "ISO-8859-15"
+  final val DEFAULT_NUMBER_ENCODING = "US-ASCII"
+    
+  final val NUMBER_BEGIN: Char = 'i'
+  final val NUMBER_END: Char = 'e'
+}
+
+sealed trait BencodeType extends BencodeConstants{
+  self =>
+
+  def unfold: Array[Byte] = {
+    self match {
+      case BString(bytes) => (bytes.size.toString.getBytes(DEFAULT_NUMBER_ENCODING) :+ ':'.toByte) ++ bytes
+      case BInt(int) => NUMBER_BEGIN.toByte +: int.toString.getBytes(DEFAULT_NUMBER_ENCODING) :+ NUMBER_END.toByte
+    }
+  }
+}
 
 case class BString(get: List[Byte]) extends BencodeType {
 
-  def create(enc: String) = new String(get.toArray, enc)
+  def create(enc: String = DEFAULT_STRING_ENCODING) = new String(get.toArray, enc)
 
   override def toString = {
     //We use a 1-byte encoding since it's compliant with specification
-    val output = new String(get.take(200).toArray, "ISO-8859-15")
+    val output = new String(get.take(200).toArray, DEFAULT_STRING_ENCODING)
     if (get.length > 200) output + " ..." else output
   }
 }
@@ -27,7 +44,7 @@ case class BList(get: List[BencodeType]) extends BencodeType
 
 case class BDict(get: Map[BString, BencodeType]) extends BencodeType
 
-trait BencodeParser extends Parsers {
+trait BencodeParser extends Parsers with BencodeConstants{
 
   type Elem = Byte
 
@@ -43,7 +60,7 @@ trait BencodeParser extends Parsers {
       if (in.atEnd) Failure("End of input reached", in)
       else {
         //Specification says numbers are coded in ASCII
-        val n = new String(Array(in.first.asInstanceOf[Byte]), "US-ASCII")
+        val n = new String(Array(in.first.asInstanceOf[Byte]), DEFAULT_NUMBER_ENCODING)
         re.findFirstIn(n) map (Success(_, in.rest)) getOrElse (Failure(s"'$n' is not a number", in))
       }
     }
@@ -74,7 +91,7 @@ trait BencodeParser extends Parsers {
     } named ("string")
 
   def int: Parser[BInt] = {
-    delimitedBy('i', 'e')(signedInt) ^^ (BInt(_)) named ("int")
+    delimitedBy(NUMBER_BEGIN, NUMBER_END)(signedInt) ^^ (BInt(_)) named ("int")
   }
 
   def list: Parser[BList] = {
@@ -110,4 +127,5 @@ object Bencode extends BencodeParser {
     val bytes = Stream.continually(bis.read).takeWhile(-1 !=).map(_.toByte).toArray
     parse(new ByteReader(bytes))
   }
+
 }

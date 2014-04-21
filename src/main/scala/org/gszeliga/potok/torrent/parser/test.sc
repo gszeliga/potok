@@ -37,4 +37,8 @@ object test {
   }                                               //> flatList: (l: List[_])List[Any]
 
   flatList(l)                                     //> res10: List[Any] = List(A, C, B)
+  
+  
+  "hola".getBytes                                 //> res11: Array[Byte] = Array(104, 111, 108, 97)
+  
 }

@@ -8,7 +8,7 @@ import scala.util.parsing.combinator.Parsers
 import scala.util.Left
 
 @RunWith(classOf[JUnitRunner])
-class TestBencode extends FlatSpec with Matchers {
+class TestBencodeParser extends FlatSpec with Matchers {
 
   behavior of "Bencode parser"
 

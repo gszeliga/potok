@@ -1,7 +1,5 @@
 package org.gszeliga.potok.torrent.parser
 
-import org.gszeliga.potok.torrent.parser.ByteReader;
-
 import scala.util.parsing.input.Reader
 import scala.util.parsing.input.CharArrayReader.EofCh
 import scala.util.parsing.input.Position

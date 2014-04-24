@@ -24,7 +24,7 @@ object test {
 
   254.toByte & 0xff                               //> res7: Int = 254
 
-  new Date(1381716156.seconds.millis)             //> res8: java.util.Date = Mon Oct 14 10:02:36 CST 2013
+  new Date(1381716156.seconds.millis)             //> res8: java.util.Date = Mon Oct 14 04:02:36 CEST 2013
 
   val l = List(List("A", List("C")), List("B"))   //> l  : List[List[Object]] = List(List(A, List(C)), List(B))
 

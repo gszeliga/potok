@@ -7,16 +7,17 @@ import org.gszeliga.potok.torrent.parser.BInt
 import java.util.Date
 import com.github.nscala_time.time.Imports._
 import org.gszeliga.potok.torrent.parser.BList
+import java.security.MessageDigest
 
 sealed trait Torrent[+A] {
 
   def /[B <: BencodeType](key: String): Torrent[B] = get(key)
-  def ?[B](key: String): Boolean = exist(key)  
-  
+  def ?[B](key: String): Boolean = exist(key)
+
   def exist[B](key: String): Boolean = get(key).found
   def get[B <: BencodeType](key: String): Torrent[B]
 
-  def raw: A
+  def value: A
   def asString: Option[String]
   def found: Boolean
   def asInt: Option[Int]
@@ -34,8 +35,15 @@ sealed trait Torrent[+A] {
 
   }
 
+  def raw: Array[Byte]
+
+  lazy val sha1 = {
+    val md = MessageDigest.getInstance("SHA-1");
+    md.digest(raw)
+  }
+
   def map[B](f: A => B): Torrent[B]
-  def flatten[B](v: Torrent[Torrent[B]]): Torrent[B] = v.raw
+  def flatten[B](v: Torrent[Torrent[B]]): Torrent[B] = v.value
   def flatMap[B](f: A => Torrent[B]): Torrent[B] = {
     flatten(map(f))
   }
@@ -43,23 +51,24 @@ sealed trait Torrent[+A] {
 }
 
 object Finish extends Torrent[Nothing] {
-  def raw = throw new IllegalAccessException("There's no value available to be retrieved")
+  def value = throw new IllegalAccessException("There's no value available to be retrieved")
   def get[B](key: String) = this
   def asString = None
   def asInt = None
   def asDate = None
   def asList[B] = None
   def map[B](f: Nothing => B) = this
-  def found: Boolean = false
+  val found: Boolean = false
+  lazy val raw: Array[Byte] = Array.empty
 }
 
-class Found[A](val raw: A) extends Torrent[A] {
-
-  def found: Boolean = true
-  def map[B](f: A => B): Torrent[B] = new Found(f(raw))
+class Found[A](val value: A) extends Torrent[A] {
+  lazy val raw: Array[Byte] = value.asInstanceOf[BencodeType].unfold
+  val found: Boolean = true
+  def map[B](f: A => B): Torrent[B] = new Found(f(value))
 
   def get[B <: BencodeType](key: String) = {
-    raw match {
+    value match {
       case BDict(m) => {
         m.get(BString(key.getBytes("US-ASCII").toList)) map (t => new Found(t.asInstanceOf[B])) getOrElse (Finish)
       }
@@ -68,14 +77,14 @@ class Found[A](val raw: A) extends Torrent[A] {
   }
 
   def asString = {
-    raw match {
+    value match {
       case BString(l) => Some(new String(l.toArray, "ISO-8859-15"))
       case _ => None
     }
   }
 
   def asInt = {
-    raw match {
+    value match {
       case BInt(i) => Some(i)
       case _ => None
     }
@@ -85,7 +94,7 @@ class Found[A](val raw: A) extends Torrent[A] {
   def asDate = asInt map (s => new Date(s.seconds.millis))
 
   def asList[B] = {
-    raw match {
+    value match {
       case BList(l) => {
 
         l.map(new Found(_)).foldRight(Option(List.empty[B])) { (c, acc) =>

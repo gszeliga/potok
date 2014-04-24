@@ -9,18 +9,31 @@ import java.net.URL
 trait BencodeConstants {
   final val DEFAULT_STRING_ENCODING = "ISO-8859-15"
   final val DEFAULT_NUMBER_ENCODING = "US-ASCII"
-    
+
   final val NUMBER_BEGIN: Char = 'i'
   final val NUMBER_END: Char = 'e'
+
+  final val LIST_BEGIN = 'l'
+  final val LIST_END = 'e'
+
+  final val DICT_BEGIN = 'd'
+  final val DICT_END = 'e'
 }
 
-sealed trait BencodeType extends BencodeConstants{
+sealed trait BencodeType extends BencodeConstants {
   self =>
 
   def unfold: Array[Byte] = {
+
+    def within[V](begin: Char, end: Char)(v: V)(f: V => Array[Byte]) = {
+      begin.toByte +: f(v) :+ end.toByte
+    }
+
     self match {
       case BString(bytes) => (bytes.size.toString.getBytes(DEFAULT_NUMBER_ENCODING) :+ ':'.toByte) ++ bytes
-      case BInt(int) => NUMBER_BEGIN.toByte +: int.toString.getBytes(DEFAULT_NUMBER_ENCODING) :+ NUMBER_END.toByte
+      case BInt(int) => within(NUMBER_BEGIN, NUMBER_END)(int)(_.toString.getBytes(DEFAULT_NUMBER_ENCODING))
+      case BList(l) => within(LIST_BEGIN, LIST_END)(l)(_.map(_.unfold).reduce(_ ++ _))
+      case BDict(m) => within(DICT_BEGIN, DICT_END)(m)(_.map { case (k, v) => k.unfold ++ v.unfold } reduce(_ ++ _))
     }
   }
 }
@@ -44,7 +57,7 @@ case class BList(get: List[BencodeType]) extends BencodeType
 
 case class BDict(get: Map[BString, BencodeType]) extends BencodeType
 
-trait BencodeParser extends Parsers with BencodeConstants{
+trait BencodeParser extends Parsers with BencodeConstants {
 
   type Elem = Byte
 
@@ -95,13 +108,13 @@ trait BencodeParser extends Parsers with BencodeConstants{
   }
 
   def list: Parser[BList] = {
-    delimitedBy('l', 'e') {
+    delimitedBy(LIST_BEGIN, LIST_END) {
       rep(string | int | list | dict)
     } ^^ (BList(_)) named ("list")
   }
 
   def dict: Parser[BDict] = {
-    delimitedBy('d', 'e') {
+    delimitedBy(DICT_BEGIN, DICT_END) {
       rep(string ~ (string | int | list | dict))
     } ^^ (_.map { case key ~ value => key -> value }) ^^ (l => BDict(l.toMap)) named ("dict")
   }

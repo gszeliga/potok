@@ -7,6 +7,7 @@ import org.scalatest.Matchers
 import org.gszeliga.potok.torrent.parser.Bencode
 import org.gszeliga.potok.torrent.Torrent._
 import java.util.Date
+import java.security.MessageDigest
 
 @RunWith(classOf[JUnitRunner])
 class TestTorrent extends FlatSpec with Matchers {
@@ -65,5 +66,24 @@ class TestTorrent extends FlatSpec with Matchers {
     list should be(Some(List("udp://tracker.openbittorrent.com:80", "udp://tracker.publicbt.com:80", "udp://tracker.istole.it:80", "udp://open.demonii.com:80", "udp://tracker.coppersurfer.tk:80", "udp://tracker.ccc.de:80")))
     
   }
+  
+  it must "retrieve the raw value of any torrent type" in {
+    
+    val bytes = torrent / "announce" raw
+    
+    bytes should be("36:udp://tracker.openbittorrent.com:80/".getBytes("ISO-8859-15"))
+    
+  }
+
+  it must "retrieve the sha1 value from any torrent type" in {
+    
+    val md = MessageDigest.getInstance("SHA-1");
+    val digest = md.digest("36:udp://tracker.openbittorrent.com:80/".getBytes("ISO-8859-15"))    
+    
+    val bytes = torrent / "announce" sha1
+    
+    bytes should be(digest)
+    
+  }  
   
 }

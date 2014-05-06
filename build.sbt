@@ -9,3 +9,5 @@ libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.0" % "test" withS
 libraryDependencies += "junit" % "junit" % "4.11" % "test" withSources()
 
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "0.8.0" withSources()
+
+libraryDependencies += "io.netty" % "netty-all" % "4.0.18.Final" withSources()
